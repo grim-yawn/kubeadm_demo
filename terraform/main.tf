@@ -40,10 +40,6 @@ resource "google_compute_instance" "masters" {
   tags = ["kubernetes-master"]
 }
 
-locals {
-  masters_ips = "${google_compute_instance.masters.*.network_interface.0.access_config.0.nat_ip}"
-}
-
 resource "google_compute_instance" "nodes" {
   name  = "node-${count.index + 1}"
   count = 3
@@ -70,6 +66,21 @@ resource "google_compute_instance" "nodes" {
   tags = ["kubernetes-node"]
 }
 
+resource "google_compute_target_pool" "masters" {
+  name      = "masters"
+  instances = ["${google_compute_instance.masters.*.self_link}"]
+}
+
+resource "google_compute_forwarding_rule" "masters" {
+  name   = "masters"
+  target = "${google_compute_target_pool.masters.self_link}"
+}
+
+locals {
+  masters_ips = "${google_compute_instance.masters.*.network_interface.0.access_config.0.nat_ip}"
+  lb_ip       = "${google_compute_forwarding_rule.masters.ip_address}"
+}
+
 resource "google_compute_firewall" "masters" {
   name    = "default-allow-masters"
   network = "default"
@@ -85,12 +96,15 @@ data "template_file" "kubeadm_config" {
   template = "${file("templates/kubeadm-config.yml")}"
 
   vars {
-    lb_address = "${local.masters_ips[0]}"
+    lb_address = "${local.lb_ip}"
+    master_0   = "${local.masters_ips[0]}"
+    master_1   = "${local.masters_ips[1]}"
+    master_2   = "${local.masters_ips[2]}"
   }
 }
 
-data "template_file" "deploy_primary_master" {
-  template = "${file("templates/deploy_primary_master.sh")}"
+data "template_file" "copy_certs" {
+  template = "${file("templates/copy_certs.sh")}"
 
   vars {
     secondary_masters = "(${join(" ", slice(local.masters_ips, 1, length(local.masters_ips)))})"
@@ -101,6 +115,7 @@ resource "null_resource" "generate_scripts" {
   connection {
     host        = "${local.masters_ips[0]}"
     private_key = "${file("~/.ssh/id_rsa_kubeadm_demo")}"
+    user        = "kubeadm_demo"
   }
 
   provisioner "file" {
@@ -109,7 +124,7 @@ resource "null_resource" "generate_scripts" {
   }
 
   provisioner "file" {
-    content     = "${data.template_file.deploy_primary_master.rendered}"
-    destination = "/home/kubeadm_demo/deploy_primary_master.sh"
+    content     = "${data.template_file.copy_certs.rendered}"
+    destination = "/home/kubeadm_demo/copy_certs.sh"
   }
 }

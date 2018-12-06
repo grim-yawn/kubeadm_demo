@@ -4,4 +4,7 @@ kubernetesVersion: stable
 apiServer:
   certSANs:
   - ${lb_address}
+  - ${master_0}
+  - ${master_1}
+  - ${master_2}
 controlPlaneEndpoint: ${lb_address}
