@@ -13,3 +13,8 @@ variable "master_machine_type" {
 variable "node_machine_type" {
   default = "n1-standard-4"
 }
+
+variable "masters_enabled" {
+  description = "Number of enabled kubernetes masters"
+  default     = 1
+}

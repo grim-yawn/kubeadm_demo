@@ -68,7 +68,7 @@ resource "google_compute_instance" "nodes" {
 
 resource "google_compute_target_pool" "masters" {
   name      = "masters"
-  instances = ["${google_compute_instance.masters.*.self_link}"]
+  instances = "${slice(google_compute_instance.masters.*.self_link, 0, var.masters_enabled)}"
 }
 
 resource "google_compute_forwarding_rule" "masters" {

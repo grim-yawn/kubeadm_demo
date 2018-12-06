@@ -40,6 +40,7 @@ export JOIN_COMMAND="kubeadm join 35.204.198.60:6443 --token i6ipo3.1uztlkiwf3eu
 
 terraform output secondary_masters
 
+# After every join you should manually set "masters_enabled" var in terraform.tfvars to number of currently running masters
 ssh kubeadm_demo@secondary "sudo ${JOIN_COMMAND} --experimental-control-plane"
 ssh kubeadm_demo@secondary "kubectl get pod -n kube-system -w"
 ```
