@@ -1,5 +1,12 @@
 # kubeadm-demo
 
+## Change google project_id
+
+```hcl-terraform
+# terrafotm.tfvars
+project_id = "your_project_id"
+```
+
 ## Apply terraform config
 ```bash
 terraform apply
@@ -7,11 +14,11 @@ terraform apply
 
 ## Primary master
 ```bash
-ssh kubeadm_demo@$(terraform output primary_master)
+ssh -A kubeadm_demo@$(terraform output primary_master)
 
 sudo kubeadm init --config=kubeadm-config.yml
 
-# Save join command <- HERE
+# Save join command
 
 # Copy generated kube config
 mkdir -p $HOME/.kube
@@ -27,11 +34,13 @@ kubectl get pod -n kube-system -w
 chmod +x copy_certs.sh && ./copy_certs.sh
 ```
 
-## On every secondary master
+## Join masters
 ```bash
+export JOIN_COMMAND="kubeadm join 35.204.198.60:6443 --token i6ipo3.1uztlkiwf3eufuwx --discovery-token-ca-cert-hash sha256:a82195855fcdcc3ea132cb459ac34fb7303ebcf2b4dfc6dbf2f10fb6836105a1"
+
 terraform output secondary_masters
 
-ssh kubeadm_demo@secondary "JOIN_COMMAND --experimental-control-plane"
+ssh kubeadm_demo@secondary "sudo ${JOIN_COMMAND} --experimental-control-plane"
 ssh kubeadm_demo@secondary "kubectl get pod -n kube-system -w"
 ```
 
@@ -39,5 +48,5 @@ ssh kubeadm_demo@secondary "kubectl get pod -n kube-system -w"
 ```bash
 terraform output nodes
 
-ssh kubeadm_demo@node "JOIN_COMMAND"
+ssh kubeadm_demo@node "sudo JOIN_COMMAND"
 ```

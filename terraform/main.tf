@@ -107,7 +107,7 @@ data "template_file" "copy_certs" {
   template = "${file("templates/copy_certs.sh")}"
 
   vars {
-    secondary_masters = "(${join(" ", slice(local.masters_ips, 1, length(local.masters_ips)))})"
+    secondary_masters = "{${join(",", slice(local.masters_ips, 1, length(local.masters_ips)))}}"
   }
 }
 

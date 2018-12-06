@@ -4,15 +4,15 @@ IFS=$'\n\t'
 
 USER=kubeadm_demo
 for host in ${secondary_masters}; do
-    scp /etc/kubernetes/pki/ca.crt $${USER}@$${host}:
-    scp /etc/kubernetes/pki/ca.key $${USER}@$${host}:
-    scp /etc/kubernetes/pki/sa.key $${USER}@$${host}:
-    scp /etc/kubernetes/pki/sa.pub $${USER}@$${host}:
-    scp /etc/kubernetes/pki/front-proxy-ca.crt $${USER}@$${host}:
-    scp /etc/kubernetes/pki/front-proxy-ca.key $${USER}@$${host}:
-    scp /etc/kubernetes/pki/etcd/ca.crt $${USER}@$${host}:etcd-ca.crt
-    scp /etc/kubernetes/pki/etcd/ca.key $${USER}@$${host}:etcd-ca.key
-    scp /etc/kubernetes/admin.conf $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/ca.crt $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/ca.key $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/sa.key $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/sa.pub $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/front-proxy-ca.crt $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/front-proxy-ca.key $${USER}@$${host}:
+    sudo -E scp /etc/kubernetes/pki/etcd/ca.crt $${USER}@$${host}:etcd-ca.crt
+    sudo -E scp /etc/kubernetes/pki/etcd/ca.key $${USER}@$${host}:etcd-ca.key
+    sudo -E scp /etc/kubernetes/admin.conf $${USER}@$${host}:
 
     ssh $${USER}@$${host} sudo mkdir -p /etc/kubernetes/pki/etcd
     ssh $${USER}@$${host} sudo mv /home/$${USER}/ca.crt /etc/kubernetes/pki/
