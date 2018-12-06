@@ -2,6 +2,10 @@ terraform {
   required_version = "0.11.10"
 }
 
+data "template_file" "prerequisites" {
+  template = "${file("files/startup-script.sh")}"
+}
+
 provider "google" {
   version = "1.19"
 
@@ -16,6 +20,12 @@ resource "google_compute_instance" "masters" {
 
   machine_type = "${var.master_machine_type}"
 
+  metadata {
+    sshKeys = "kubeadm_demo:${file("~/.ssh/id_rsa_kubeadm_demo.pub")}"
+  }
+
+  metadata_startup_script = "${data.template_file.prerequisites.rendered}"
+
   boot_disk {
     initialize_params {
       image = "${var.base_image}"
@@ -26,6 +36,12 @@ resource "google_compute_instance" "masters" {
     network       = "default"
     access_config = {}
   }
+
+  tags = ["kubernetes-master"]
+}
+
+locals {
+  masters_ips = "${google_compute_instance.masters.*.network_interface.0.access_config.0.nat_ip}"
 }
 
 resource "google_compute_instance" "nodes" {
@@ -34,6 +50,12 @@ resource "google_compute_instance" "nodes" {
 
   machine_type = "${var.node_machine_type}"
 
+  metadata_startup_script = "${data.template_file.prerequisites.rendered}"
+
+  metadata {
+    sshKeys = "kubeadm_demo:${file("~/.ssh/id_rsa_kubeadm_demo.pub")}"
+  }
+
   boot_disk {
     initialize_params {
       image = "${var.base_image}"
@@ -43,5 +65,51 @@ resource "google_compute_instance" "nodes" {
   network_interface {
     network       = "default"
     access_config = {}
+  }
+
+  tags = ["kubernetes-node"]
+}
+
+resource "google_compute_firewall" "masters" {
+  name    = "default-allow-masters"
+  network = "default"
+
+  allow {
+    protocol = "all"
+  }
+
+  source_ranges = ["0.0.0.0/0"]
+}
+
+data "template_file" "kubeadm_config" {
+  template = "${file("templates/kubeadm-config.yml")}"
+
+  vars {
+    lb_address = "${local.masters_ips[0]}"
+  }
+}
+
+data "template_file" "deploy_primary_master" {
+  template = "${file("templates/deploy_primary_master.sh")}"
+
+  vars {
+    secondary_masters = "(${join(" ", slice(local.masters_ips, 1, length(local.masters_ips)))})"
+  }
+}
+
+resource "null_resource" "generate_scripts" {
+  connection {
+    host        = "${local.masters_ips[0]}"
+    private_key = "${file("~/.ssh/id_rsa_kubeadm_demo")}"
+  }
+
+  provisioner "file" {
+    content     = "${data.template_file.kubeadm_config.rendered}"
+    destination = "/home/kubeadm_demo/kubeadm-config.yml"
+  }
+
+  provisioner "file" {
+    content     = "${data.template_file.deploy_primary_master.rendered}"
+    destination = "/home/kubeadm_demo/deploy_primary_master.sh"
   }
 }
