@@ -36,7 +36,7 @@ chmod +x copy_certs.sh && ./copy_certs.sh
 
 ## Join masters
 ```bash
-export JOIN_COMMAND="kubeadm join 35.204.198.60:6443 --token i6ipo3.1uztlkiwf3eufuwx --discovery-token-ca-cert-hash sha256:a82195855fcdcc3ea132cb459ac34fb7303ebcf2b4dfc6dbf2f10fb6836105a1"
+export JOIN_COMMAND="<PASTE_HERE>"
 
 terraform output secondary_masters
 
