@@ -49,5 +49,5 @@ ssh kubeadm_demo@secondary "kubectl get pod -n kube-system -w"
 ```bash
 terraform output nodes
 
-ssh kubeadm_demo@node "sudo JOIN_COMMAND"
+ssh kubeadm_demo@node_ip "sudo ${JOIN_COMMAND}"
 ```
